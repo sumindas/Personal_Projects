@@ -4,7 +4,6 @@ from django.db import transaction
 
 from .models import Vehicle, ParkingSlot, ParkingRecord
 
-
 def dashboard(request):
 
     # =====================================================
