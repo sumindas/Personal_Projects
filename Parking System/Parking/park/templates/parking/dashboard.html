@@ -1,0 +1,827 @@
+{% extends 'parking/base.html' %}
+
+{% load static %}
+
+
+{% block title %}
+Parking Dashboard
+{% endblock %}
+
+
+{% block content %}
+
+<div class="parking-dashboard">
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="dashboard-header">
+
+        <div>
+
+            <h1 class="dashboard-title">
+                Parking Dashboard
+            </h1>
+
+            <p class="dashboard-subtitle">
+                Manage vehicle entry, exit and parking occupancy
+            </p>
+
+        </div>
+
+
+        <div class="system-status">
+
+            <span class="status-dot"></span>
+
+            System Online
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         SUMMARY
+    ====================================================== -->
+
+    <div class="summary-grid">
+
+
+        <div class="summary-card">
+
+            <div class="summary-icon blue">
+                P
+            </div>
+
+            <div>
+
+                <div class="summary-label">
+                    Total Slots
+                </div>
+
+                <div class="summary-value">
+                    {{ total_slots }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="summary-card">
+
+            <div class="summary-icon green">
+                ✓
+            </div>
+
+            <div>
+
+                <div class="summary-label">
+                    Available
+                </div>
+
+                <div class="summary-value green-text">
+                    {{ available_slots }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="summary-card">
+
+            <div class="summary-icon red">
+                ×
+            </div>
+
+            <div>
+
+                <div class="summary-label">
+                    Occupied
+                </div>
+
+                <div class="summary-value red-text">
+                    {{ occupied_slots }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="summary-card">
+
+            <div class="summary-icon orange">
+                %
+            </div>
+
+            <div>
+
+                <div class="summary-label">
+                    Occupancy
+                </div>
+
+                <div class="summary-value">
+
+                    {% if total_slots %}
+
+                        {% widthratio occupied_slots total_slots 100 %}%
+
+                    {% else %}
+
+                        0%
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         ACTION BAR
+    ====================================================== -->
+
+    <div class="action-card">
+
+        <div>
+
+            <h2>
+                Vehicle Management
+            </h2>
+
+            <p>
+                Register vehicle entry or process vehicle exit
+            </p>
+
+        </div>
+
+
+        <div class="action-buttons">
+
+
+            <!-- ADD VEHICLE -->
+
+            <button
+                type="button"
+                class="action-button add-button"
+                data-bs-toggle="modal"
+                data-bs-target="#addVehicleModal"
+            >
+
+                <span class="button-icon">
+                    +
+                </span>
+
+                Add Vehicle
+
+            </button>
+
+
+            <!-- REMOVE VEHICLE -->
+
+            <button
+                type="button"
+                class="action-button remove-button"
+                data-bs-toggle="modal"
+                data-bs-target="#removeVehicleModal"
+            >
+
+                <span class="button-icon">
+                    −
+                </span>
+
+                Remove Vehicle
+
+            </button>
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         PARKING LAYOUT
+    ====================================================== -->
+
+    <div class="section-card">
+
+        <div class="section-header">
+
+            <div>
+
+                <h2>
+                    Parking Layout
+                </h2>
+
+                <p>
+                    Live status of all parking slots
+                </p>
+
+            </div>
+
+
+            <div class="parking-legend">
+
+                <span>
+
+                    <i class="legend-box occupied"></i>
+
+                    Occupied
+
+                </span>
+
+
+                <span>
+
+                    <i class="legend-box available"></i>
+
+                    Available
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="parking-grid">
+
+            {% for slot in slots %}
+
+
+                {% if slot.is_occupied %}
+
+                    <!-- OCCUPIED SLOT -->
+
+                    <div
+                        class="parking-slot occupied-slot"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-html="true"
+                        title="
+                            <strong>
+                                P{{ slot.slot_number }}
+                            </strong>
+                            <br>
+                            Vehicle:
+                            {{ slot.active_record.vehicle.vehicle_number }}
+                            <br>
+                            Type:
+                            {{ slot.active_record.vehicle.get_vehicle_type_display }}
+                            <br>
+                            Owner:
+                            {{ slot.active_record.vehicle.owner_name }}
+                        "
+                    >
+
+                        <div class="slot-number">
+                            P{{ slot.slot_number }}
+                        </div>
+
+                        <div class="slot-status">
+                            Occupied
+                        </div>
+
+                    </div>
+
+
+                {% else %}
+
+                    <!-- AVAILABLE SLOT -->
+
+                    <div
+                        class="parking-slot available-slot"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        title="P{{ slot.slot_number }} - Available"
+                    >
+
+                        <div class="slot-number">
+                            P{{ slot.slot_number }}
+                        </div>
+
+                        <div class="slot-status">
+                            Available
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+
+            {% empty %}
+
+                <div class="empty-slots">
+                    No parking slots configured.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         ACTIVE VEHICLES
+    ====================================================== -->
+
+    <div class="section-card">
+
+        <div class="section-header">
+
+            <div>
+
+                <h2>
+                    Currently Parked Vehicles
+                </h2>
+
+                <p>
+                    Vehicles currently inside the parking area
+                </p>
+
+            </div>
+
+
+            <span class="active-count">
+
+                {{ active_records|length }} Active
+
+            </span>
+
+        </div>
+
+
+
+        <div class="table-responsive">
+
+            <table class="parking-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Vehicle
+                        </th>
+
+                        <th>
+                            Owner
+                        </th>
+
+                        <th>
+                            Phone
+                        </th>
+
+                        <th>
+                            Type
+                        </th>
+
+                        <th>
+                            Slot
+                        </th>
+
+                        <th>
+                            Entry Time
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for record in active_records %}
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    {{ record.vehicle.vehicle_number }}
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+                                {{ record.vehicle.owner_name }}
+                            </td>
+
+
+                            <td>
+                                {{ record.vehicle.phone_number }}
+                            </td>
+
+
+                            <td>
+
+                                <span class="vehicle-type">
+
+                                    {{ record.vehicle.get_vehicle_type_display }}
+
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="slot-badge">
+
+                                    P{{ record.slot.slot_number }}
+
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                {{ record.entry_time|date:"d M Y, h:i A" }}
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="active-status">
+
+                                    <span></span>
+
+                                    Parked
+
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td
+                                colspan="7"
+                                class="empty-table"
+                            >
+
+                                No vehicles are currently parked.
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     ADD VEHICLE MODAL
+========================================================= -->
+
+<div
+    class="modal fade"
+    id="addVehicleModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content professional-modal">
+
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h5 class="modal-title">
+                        Add Vehicle
+                    </h5>
+
+                    <p class="modal-subtitle">
+                        Register a vehicle and park it
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+
+            </div>
+
+
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="park"
+                >
+
+
+                <div class="modal-body">
+
+
+                    <!-- VEHICLE NUMBER -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Vehicle Number
+                        </label>
+
+                        <input
+                            type="text"
+                            name="vehicle_number"
+                            class="form-control"
+                            placeholder="KL07AB1234"
+                            autocomplete="off"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- OWNER -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Owner Name
+                        </label>
+
+                        <input
+                            type="text"
+                            name="owner_name"
+                            class="form-control"
+                            placeholder="Enter owner name"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- PHONE -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Phone Number
+                        </label>
+
+                        <input
+                            type="tel"
+                            name="phone"
+                            class="form-control"
+                            placeholder="9876543210"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- VEHICLE TYPE -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Vehicle Type
+                        </label>
+
+                        <select
+                            name="vehicle_type"
+                            class="form-select"
+                            required
+                        >
+
+                            <option value="">
+                                Select vehicle type
+                            </option>
+
+                            <option value="BIKE">
+                                Bike
+                            </option>
+
+                            <option value="CAR">
+                                Car
+                            </option>
+
+                            <option value="AUTO">
+                                Auto
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-success"
+                    >
+                        Add Vehicle
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     REMOVE VEHICLE MODAL
+========================================================= -->
+
+<div
+    class="modal fade"
+    id="removeVehicleModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content professional-modal">
+
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h5 class="modal-title">
+                        Remove Vehicle
+                    </h5>
+
+                    <p class="modal-subtitle">
+                        Process vehicle exit
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+
+            </div>
+
+
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="remove"
+                >
+
+
+                <div class="modal-body">
+
+
+                    <div class="remove-warning">
+
+                        <div class="warning-icon">
+                            !
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Vehicle Exit
+                            </strong>
+
+                            <p>
+                                Enter the vehicle number
+                                currently parked in the system.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Vehicle Number
+                        </label>
+
+                        <input
+                            type="text"
+                            name="vehicle_number"
+                            class="form-control"
+                            placeholder="KL07AB1234"
+                            autocomplete="off"
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-danger"
+                    >
+                        Remove Vehicle
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{% endblock %}
